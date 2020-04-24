@@ -1,17 +1,13 @@
-package com.example.administrator.foregroundservicetest;
+package com.example.administrator.foregroundservicetest.service;
 
 import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
-import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Color;
-import android.media.AudioAttributes;
-import android.media.AudioManager;
-import android.net.Uri;
 import android.os.Build;
 import android.os.Handler;
 import android.os.IBinder;
@@ -19,16 +15,21 @@ import android.os.Message;
 import android.support.annotation.Nullable;
 import android.support.v4.app.NotificationCompat;
 
+import com.example.administrator.foregroundservicetest.App;
+import com.example.administrator.foregroundservicetest.R;
+import com.example.administrator.foregroundservicetest.ServiceActivity;
 import com.example.administrator.foregroundservicetest.bean.ServiceRunRecord;
 import com.example.administrator.foregroundservicetest.cache.CacheUtils;
 import com.example.administrator.foregroundservicetest.jpush.EventMsg;
+import com.example.administrator.foregroundservicetest.utils.LogUtils;
 import com.example.administrator.foregroundservicetest.utils.TimeUtils;
 
 import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.Subscribe;
 import org.greenrobot.eventbus.ThreadMode;
 
-import static android.media.AudioAttributes.USAGE_MEDIA;
+import cn.jpush.android.api.JPushInterface;
+
 import static android.support.v4.app.NotificationCompat.PRIORITY_MAX;
 
 /**
@@ -39,27 +40,39 @@ import static android.support.v4.app.NotificationCompat.PRIORITY_MAX;
  */
 public class RunningService extends Service {
 
-    public static boolean isRunning = false;
 
+    public static final String TAG = "==RunningService==";
+    public static boolean isRunning = false;
+    /**
+     * 是否要保证极光连接
+     */
+    private boolean isConfirmJpushConnect;
     private Handler mHandler = new Handler() {
         @Override
         public void handleMessage(Message msg) {
+            mHandler.removeMessages(msg.what);
             CacheUtils.getInstance().add(new ServiceRunRecord("RunningService", TimeUtils.getInstance().getTime()));
-            sendMessageDelayed(obtainMessage(), 60_000);
+            sendMessageDelayed(getRunningMessage(), 10_000);
+            if (isConfirmJpushConnect) {
+                boolean pushStopped = JPushInterface.isPushStopped(App.app);
+                LogUtils.e(TAG, pushStopped ? "未连接" : "已连接");
+                if (pushStopped) {
+                    JPushInterface.resumePush(App.app);
+                }
+            }
         }
     };
+
     private NotificationChannel foregroundChannel;
 
     //前台服务通知channel id
     String foregroundChannelId = "notification_channel_id_01";
-
 
     @Nullable
     @Override
     public IBinder onBind(Intent intent) {
         return null;
     }
-
 
     @Override
     public void onCreate() {
@@ -68,12 +81,38 @@ public class RunningService extends Service {
         Notification notification = createForegroundNotification();
         startForeground(110, notification);
         EventBus.getDefault().register(this);
-        mHandler.sendMessage(mHandler.obtainMessage());
+
+        mHandler.sendMessage(getRunningMessage());
+    }
+
+    private Message getRunningMessage() {
+        Message message = mHandler.obtainMessage();
+        message.what = 0;
+        return message;
+    }
+
+    private Message getControlMessage(EventControlService event) {
+        Message message = mHandler.obtainMessage();
+        message.what = 1;
+        message.obj = event;
+        return message;
     }
 
     @Subscribe(threadMode = ThreadMode.MAIN)
     public void onEvent(EventMsg msg) {
 
+    }
+
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    public void onEventControlService(EventControlService event) {
+        switch (event.getAction()) {
+            case ACTION_CONFIRM_JPUSH_CONNECT:
+                isConfirmJpushConnect = true;
+                break;
+            case ACTION_STOP_CONFIRM_JPUSH_CONNECT:
+                isConfirmJpushConnect = false;
+                break;
+        }
     }
 
     @Override
@@ -97,7 +136,6 @@ public class RunningService extends Service {
         NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
 
 // 唯一的通知通道的id.
-
 
 // Android8.0以上的系统，新建消息通道
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -125,9 +163,9 @@ public class RunningService extends Service {
         //通知小图标
         builder.setSmallIcon(R.mipmap.ic_launcher);
         //通知标题
-        builder.setContentTitle("前台通知");
+        builder.setContentTitle("推送设置");
         //通知内容
-        builder.setContentText("app正在运行中......");
+        builder.setContentText("推送设置正在运行中......");
         builder.setAutoCancel(false);
         //设定通知显示的时间
         builder.setWhen(System.currentTimeMillis());
@@ -141,5 +179,17 @@ public class RunningService extends Service {
         return builder.build();
     }
 
+
+    public static void start(Context context) {
+        if (!RunningService.isRunning) {
+            Intent service = new Intent(App.app, RunningService.class);
+            // Android 8.0使用startForegroundService在前台启动新服务
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                context.startForegroundService(service);
+            } else {
+                context.startService(service);
+            }
+        }
+    }
 
 }
