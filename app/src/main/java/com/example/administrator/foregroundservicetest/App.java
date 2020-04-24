@@ -3,9 +3,12 @@ package com.example.administrator.foregroundservicetest;
 import android.app.Application;
 import android.content.Context;
 
+import com.example.administrator.foregroundservicetest.cache.BoxCache;
+
 import org.xutils.x;
 
 import cn.jpush.android.api.JPushInterface;
+import io.objectbox.BoxStore;
 
 /**
  * <p>@author : tangyanghai</p>
@@ -23,5 +26,6 @@ public class App extends Application {
         JPushInterface.init(this);
         x.Ext.init(this);
         x.Ext.setDebug(BuildConfig.DEBUG); // 是否输出debug日志, 开启debug会影响性能.
+        BoxCache.getInstance().init(this);
     }
 }

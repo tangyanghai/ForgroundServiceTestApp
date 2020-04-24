@@ -5,6 +5,8 @@ import android.os.Looper;
 
 import java.util.List;
 
+import io.objectbox.BoxStore;
+
 /**
  * <p>@author : tangyanghai</p>
  * <p>@time : 2020/4/16</p>
@@ -24,11 +26,19 @@ public class CacheUtils implements ICache {
 
     @Override
     public synchronized <T> void add(final T... list) {
+        if (list == null || list.length == 0) {
+            return;
+        }
         new Thread() {
             @Override
             public void run() {
+                Class<T> clz = (Class<T>) list[0].getClass();
+                List<T> l = NativeCache.getInstance().find(clz);
+                if (l == null || l.size() == 0) {
+                    find(clz);
+                }
                 NativeCache.getInstance().add(list);
-                DbCache.getInstance().add(list);
+                BoxCache.getInstance().add(list);
             }
         }.start();
     }
@@ -39,7 +49,13 @@ public class CacheUtils implements ICache {
         if (ts != null && ts.size() > 0) {
             return ts;
         }
-        return DbCache.getInstance().find(cls);
+        ts = BoxCache.getInstance().find(cls);
+        if (ts != null && ts.size() > 0) {
+            for (T t : ts) {
+                NativeCache.getInstance().add(t);
+            }
+        }
+        return ts;
     }
 
     public synchronized <T> void findAsyn(final Class<T> clz, final OnFindData<T> lisenter) {

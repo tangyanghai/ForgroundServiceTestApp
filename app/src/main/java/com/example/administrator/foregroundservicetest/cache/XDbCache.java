@@ -15,15 +15,15 @@ import java.util.List;
  * <p>@for : 数据库数据缓存</p>
  * <p></p>
  */
-public class DbCache implements ICache{
-    private static final DbCache ourInstance = new DbCache();
+public class XDbCache implements ICache{
+    private static final XDbCache ourInstance = new XDbCache();
     private DbManager db;
 
-    public static DbCache getInstance() {
+    public static XDbCache getInstance() {
         return ourInstance;
     }
 
-    private DbCache() {
+    private XDbCache() {
         init();
     }
 

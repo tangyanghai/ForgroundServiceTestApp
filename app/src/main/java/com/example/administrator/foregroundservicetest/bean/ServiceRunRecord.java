@@ -1,7 +1,7 @@
 package com.example.administrator.foregroundservicetest.bean;
 
-import org.xutils.db.annotation.Column;
-import org.xutils.db.annotation.Table;
+import io.objectbox.annotation.Entity;
+import io.objectbox.annotation.Id;
 
 /**
  * <p>@author : tangyanghai</p>
@@ -9,23 +9,13 @@ import org.xutils.db.annotation.Table;
  * <p>@for : </p>
  * <p></p>
  */
-@Table(name = "service_record")
+@Entity
 public class ServiceRunRecord {
-    @Column(
-            name = "ID",
-            isId = true,
-            autoGen = true
-    )
-    private int id;
+    @Id
+    private Long id;
 
-    @Column(
-            name = "ACT_NAME"
-    )
     private String name;
 
-    @Column(
-            name = "TIME"
-    )
     private String time;
 
     public ServiceRunRecord() {
@@ -36,11 +26,11 @@ public class ServiceRunRecord {
         this.time = time;
     }
 
-    public int getId() {
+    public Long getId() {
         return id;
     }
 
-    public void setId(int id) {
+    public void setId(Long id) {
         this.id = id;
     }
 

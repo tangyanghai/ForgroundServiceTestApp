@@ -1,7 +1,7 @@
 package com.example.administrator.foregroundservicetest.bean;
 
-import org.xutils.db.annotation.Column;
-import org.xutils.db.annotation.Table;
+import io.objectbox.annotation.Entity;
+import io.objectbox.annotation.Id;
 
 /**
  * <p>@author : tangyanghai</p>
@@ -9,18 +9,13 @@ import org.xutils.db.annotation.Table;
  * <p>@for : </p>
  * <p></p>
  */
-@Table(name = "push_record")
+@Entity
 public class PushRecord {
-    @Column(
-            name = "ID",
-            isId = true,
-            autoGen = true
-    )
-    private int id;
-    @Column(name = "TITLE")
+    @Id
+    private Long id;
+
     private String title;
 
-    @Column(name = "TIME")
     private String time;
 
     public PushRecord() {
@@ -31,11 +26,11 @@ public class PushRecord {
         this.time = time;
     }
 
-    public int getId() {
+    public Long getId() {
         return id;
     }
 
-    public void setId(int id) {
+    public void setId(Long id) {
         this.id = id;
     }
 

@@ -17,11 +17,15 @@ import android.support.v4.app.NotificationCompat;
 import com.example.administrator.foregroundservicetest.App;
 import com.example.administrator.foregroundservicetest.R;
 import com.example.administrator.foregroundservicetest.ServiceActivity;
-import com.example.administrator.foregroundservicetest.utils.NotificationIdUtils;
-import com.example.administrator.foregroundservicetest.utils.TimeUtils;
 import com.example.administrator.foregroundservicetest.bean.PushRecord;
 import com.example.administrator.foregroundservicetest.cache.CacheUtils;
+import com.example.administrator.foregroundservicetest.utils.LogUtils;
+import com.example.administrator.foregroundservicetest.utils.NotificationIdUtils;
+import com.example.administrator.foregroundservicetest.utils.TimeUtils;
 
+import org.xutils.common.util.LogUtil;
+
+import cn.jpush.android.api.CmdMessage;
 import cn.jpush.android.api.CustomMessage;
 import cn.jpush.android.service.JPushMessageReceiver;
 
@@ -34,6 +38,7 @@ import static android.support.v4.app.NotificationCompat.PRIORITY_MAX;
  * <p></p>
  */
 public class JPushMessageReceiverImpl extends JPushMessageReceiver {
+    private final static String TAG = "==JPushMessageReceiver==";
     private NotificationChannel normalChannel;
     //普通通知channel_id.
     String normalChannelId = "notification_channel_id_02";
@@ -42,6 +47,43 @@ public class JPushMessageReceiverImpl extends JPushMessageReceiver {
     public void onMessage(Context context, CustomMessage msg) {
         super.onMessage(context, msg);
         notify(msg.title, msg.message);
+    }
+
+    /**
+     * 该方法会在以下情况触发时回调。
+     * 1.sdk每次启动后都会检查通知开关状态并通过该方法回调给开发者。
+     * 2.当sdk检查到通知状态变更时会通过该方法回调给开发者。
+     *
+     * @param isOn   通知开关状态
+     * @param source 0为sdk启动，1为检测到通知开关状态变更
+     */
+    @Override
+    public void onNotificationSettingsCheck(Context context, boolean isOn, int source) {
+        LogUtils.e(TAG, "onNotificationSettingsCheck: " + "isOn = " + isOn + "; source = " + source);
+    }
+
+    /**
+     * 注册失败的回调
+     */
+    @Override
+    public void onCommandResult(Context context, CmdMessage cmdMessage) {
+        LogUtils.e(TAG, "onCommandResult: " + cmdMessage.toString());
+    }
+
+    /**
+     * 注册成功的回调
+     */
+    @Override
+    public void onRegister(Context context, String s) {
+        LogUtils.e(TAG, "onRegister: " + s);
+    }
+
+    /**
+     * 长连接状态
+     */
+    @Override
+    public void onConnected(Context context, boolean isConnected) {
+        LogUtils.e(TAG, "onConnected: isConnected = " + isConnected);
     }
 
     private void notify(String title, String msg) {
